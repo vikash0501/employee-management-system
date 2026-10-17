@@ -87,7 +87,7 @@ def update_department(
     return department_service.update_department(db, department, department_data)
 
 
-@router.delete("/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
+
 @router.delete(
     "/{department_id}",
     status_code=status.HTTP_204_NO_CONTENT,
