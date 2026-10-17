@@ -21,7 +21,7 @@ def get_employees(
     skip: int = 0,
     limit: int = 100,
 ) -> list[Employee]:
-    statement = select(Employee).offset(skip).limit(limit)
+    statement = select(Employee).order_by(Employee.id).offset(skip).limit(limit)
     return list(db.scalars(statement).all())
 
 

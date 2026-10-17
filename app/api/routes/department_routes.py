@@ -88,16 +88,30 @@ def update_department(
 
 
 @router.delete("/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{department_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 def delete_department(
     department_id: int,
     db: Session = Depends(get_db),
 ):
-    department = department_service.get_department_by_id(db, department_id)
+    department = department_service.get_department_by_id(
+        db, department_id
+    )
 
     if department is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Department not found.",
+        )
+
+    if department_service.department_has_employees(
+        db, department_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete a department that has employees.",
         )
 
     department_service.delete_department(db, department)

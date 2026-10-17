@@ -68,3 +68,43 @@ def test_get_nonexistent_department_returns_404(client):
     response = client.get("/api/v1/departments/999999999")
 
     assert response.status_code == 404
+
+def test_delete_department_with_employees_returns_409(client):
+    department_payload = {
+        "name": f"Dept-{uuid4().hex[:8]}",
+        "description": "Department with an employee",
+    }
+
+    department_response = client.post(
+        "/api/v1/departments/",
+        json=department_payload,
+    )
+    assert department_response.status_code == 201
+
+    department_id = department_response.json()["id"]
+
+    employee_payload = {
+        "first_name": "Test",
+        "last_name": "Employee",
+        "email": f"{uuid4().hex[:8]}@example.com",
+        "phone": "9876543210",
+        "designation": "Engineer",
+        "department_id": department_id,
+        "date_of_joining": "2026-01-15",
+        "employment_status": "ACTIVE",
+    }
+
+    employee_response = client.post(
+        "/api/v1/employees/",
+        json=employee_payload,
+    )
+    assert employee_response.status_code == 201
+
+    delete_response = client.delete(
+        f"/api/v1/departments/{department_id}"
+    )
+
+    assert delete_response.status_code == 409
+    assert delete_response.json()["detail"] == (
+        "Cannot delete a department that has employees."
+    )
