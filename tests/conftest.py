@@ -1,8 +1,9 @@
 
 import os
 
-# Set the test database before importing the application.
+# Set test environment before importing the application.
 os.environ["DB_NAME"] = "employee_management_test_db"
+os.environ["API_ACCESS_TOKEN"] = "test-secret-token-for-employee-api"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,5 +23,7 @@ def create_test_tables():
 @pytest.fixture
 def client():
     with TestClient(app) as test_client:
+        test_client.headers.update(
+            {"Authorization": "Bearer test-secret-token-for-employee-api"}
+        )
         yield test_client
-

@@ -1,8 +1,9 @@
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
 from app.api.routes.department_routes import router as department_router
 from app.api.routes.employee_routes import router as employee_router
+from app.core.auth import verify_api_token
 
 app = FastAPI(
     title="Employee Management System API",
@@ -10,8 +11,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
-app.include_router(department_router, prefix="/api/v1")
-app.include_router(employee_router, prefix="/api/v1")
+app.include_router(
+    department_router,
+    prefix="/api/v1",
+    dependencies=[Depends(verify_api_token)],
+)
+
+app.include_router(
+    employee_router,
+    prefix="/api/v1",
+    dependencies=[Depends(verify_api_token)],
+)
 
 
 @app.get("/health", tags=["Health"])

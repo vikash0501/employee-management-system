@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
 
+    API_ACCESS_TOKEN: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

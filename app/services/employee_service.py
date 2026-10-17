@@ -43,12 +43,15 @@ def update_employee(
     employee: Employee,
     employee_data: EmployeeUpdate,
 ) -> Employee:
-    department = db.get(Department, employee_data.department_id)
+    update_data = employee_data.model_dump(exclude_unset=True)
 
-    if department is None:
-        raise ValueError("Department not found.")
+    if "department_id" in update_data:
+        department = db.get(Department, update_data["department_id"])
 
-    for field, value in employee_data.model_dump().items():
+        if department is None:
+            raise ValueError("Department not found.")
+
+    for field, value in update_data.items():
         setattr(employee, field, value)
 
     db.commit()
