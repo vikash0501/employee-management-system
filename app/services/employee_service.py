@@ -7,6 +7,15 @@ from app.models.employee import Employee
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate
 
 
+SORTABLE_FIELDS = {
+    "id": Employee.id,
+    "first_name": Employee.first_name,
+    "last_name": Employee.last_name,
+    "email": Employee.email,
+    "designation": Employee.designation,
+}
+
+
 def get_employee_by_id(db: Session, employee_id: int) -> Employee | None:
     return db.get(Employee, employee_id)
 
@@ -23,10 +32,11 @@ def get_employees(
     search: str | None = None,
     department_id: int | None = None,
     designation: str | None = None,
+    sort_by: str = "id",
+    sort_order: str = "asc",
 ) -> list[Employee]:
     statement = select(Employee)
 
-    
     if search and search.strip():
         search_term = search.strip()
         statement = statement.where(
@@ -48,11 +58,16 @@ def get_employees(
             )
         )
 
-    statement = (
-        statement.order_by(Employee.id)
-        .offset(skip)
-        .limit(limit)
-    )
+    sort_column = SORTABLE_FIELDS.get(sort_by)
+    if sort_column is None:
+        raise ValueError("Unsupported sort field.")
+
+    if sort_order == "desc":
+        statement = statement.order_by(sort_column.desc())
+    else:
+        statement = statement.order_by(sort_column.asc())
+
+    statement = statement.offset(skip).limit(limit)
 
     return list(db.scalars(statement).all())
 

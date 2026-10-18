@@ -354,3 +354,71 @@ def test_designation_with_nul_byte_returns_422(client):
     )
 
     assert response.status_code == 422
+
+
+
+def test_sort_employees_by_first_name_ascending(client):
+    department_id = create_department(client)
+    create_employee(
+        client,
+        department_id=department_id,
+        first_name="Zoya",
+    )
+    create_employee(
+        client,
+        department_id=department_id,
+        first_name="Amit",
+    )
+
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"sort_by": "first_name", "sort_order": "asc"},
+    )
+
+    assert response.status_code == 200
+    names = [employee["first_name"] for employee in response.json()]
+    assert names == sorted(names)
+
+
+
+def test_sort_employees_by_first_name_descending(client):
+    department_id = create_department(client)
+    create_employee(
+        client,
+        department_id=department_id,
+        first_name="Aarav",
+    )
+    create_employee(
+        client,
+        department_id=department_id,
+        first_name="Zoya",
+    )
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"sort_by": "first_name", "sort_order": "desc"},
+    )
+
+    assert response.status_code == 200
+    names = [employee["first_name"] for employee in response.json()]
+    assert names == sorted(names, reverse=True)
+
+
+
+def test_sort_employees_invalid_sort_field(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"sort_by": "password"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_sort_employees_invalid_sort_order(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"sort_order": "random"},
+    )
+
+    assert response.status_code == 422
