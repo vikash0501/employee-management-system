@@ -1,6 +1,8 @@
 
 from uuid import uuid4
 
+import pytest
+
 
 def create_department(client, name_prefix="Engineering"):
     response = client.post(
@@ -30,9 +32,6 @@ def create_employee(client, department_id, **overrides):
     return response.json()
 
 
-
-
-
 def test_create_employee(client):
     department_id = create_department(client)
     email = f"employee-{uuid4().hex[:8]}@example.com"
@@ -52,7 +51,6 @@ def test_create_employee(client):
     assert employee["date_of_joining"].startswith("2025-01-15")
     assert employee["department_id"] == department_id
     assert "id" in employee
-
 
 
 def test_list_employees(client):
@@ -122,7 +120,6 @@ def test_update_employee_with_same_email_returns_200(client):
     assert response.json()["email"] == employee["email"]
 
 
-
 def test_update_employee_with_duplicate_email_returns_409(client):
     department_id = create_department(client)
     first = create_employee(client, department_id)
@@ -163,6 +160,33 @@ def test_update_employee_with_null_first_name_returns_422(client):
 
     assert response.status_code == 422
     assert response.json()["detail"] == "first_name cannot be null."
+
+
+def test_update_employee_with_null_last_name_returns_422(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"last_name": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "last_name cannot be null."
+
+
+def test_update_employee_with_null_email_returns_422(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"email": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "email cannot be null."
+
 
 def test_update_nonexistent_employee_returns_404(client):
     response = client.put(
@@ -238,9 +262,6 @@ def test_delete_nonexistent_employee_returns_404(client):
     assert response.json()["detail"] == "Employee not found."
 
 
-
-
-
 def test_search_employees_by_name(client):
     department_id = create_department(client)
 
@@ -249,7 +270,7 @@ def test_search_employees_by_name(client):
         department_id,
         first_name="Vikash",
         last_name="Kumar",
-        email="vikash.kumar@example.com",
+        email=f"vikash-{uuid4().hex[:8]}@example.com",
     )
 
     other_employee = create_employee(
@@ -257,10 +278,9 @@ def test_search_employees_by_name(client):
         department_id,
         first_name="Rahul",
         last_name="Sharma",
-        email="rahul.sharma@example.com",
+        email=f"rahul-{uuid4().hex[:8]}@example.com",
     )
 
-    # Search by first name
     response = client.get(
         "/api/v1/employees/",
         params={"search": "vikash"},
@@ -270,7 +290,6 @@ def test_search_employees_by_name(client):
     assert any(item["id"] == employee["id"] for item in results)
     assert all(item["id"] != other_employee["id"] for item in results)
 
-    # Search by last name
     response = client.get(
         "/api/v1/employees/",
         params={"search": "Kumar"},
@@ -280,24 +299,21 @@ def test_search_employees_by_name(client):
     assert any(item["id"] == employee["id"] for item in results)
     assert all(item["id"] != other_employee["id"] for item in results)
 
-    # Search by email
     response = client.get(
         "/api/v1/employees/",
-        params={"search": "vikash.kumar@example.com"},
+        params={"search": employee["email"]},
     )
     assert response.status_code == 200
     results = response.json()
     assert any(item["id"] == employee["id"] for item in results)
     assert all(item["id"] != other_employee["id"] for item in results)
 
-    # Search with no matching employee
     response = client.get(
         "/api/v1/employees/",
         params={"search": "nonexistent-employee-xyz"},
     )
     assert response.status_code == 200
     assert response.json() == []
-
 
 
 def test_filter_employees_by_department(client):
@@ -350,7 +366,6 @@ def test_filter_employees_by_designation(client):
     )
 
 
-
 def test_search_with_nul_byte_returns_422(client):
     response = client.get(
         "/api/v1/employees/",
@@ -368,28 +383,66 @@ def test_designation_with_nul_byte_returns_422(client):
 
     assert response.status_code == 422
 
-def test_update_employee_with_null_last_name_returns_422(client):
-    department_id = create_department(client)
-    employee = create_employee(client, department_id)
 
-    response = client.put(
-        f"/api/v1/employees/{employee['id']}",
-        json={"last_name": None},
+@pytest.mark.parametrize(
+    "sort_by",
+    ["id", "first_name", "last_name", "email", "designation"],
+)
+@pytest.mark.parametrize("sort_order", ["asc", "desc"])
+def test_sort_employees_by_field_and_order(client, sort_by, sort_order):
+    department_id = create_department(client)
+
+    create_employee(
+        client,
+        department_id,
+        first_name="Zoya",
+        last_name="Patel",
+        email=f"zoya-{uuid4().hex[:8]}@example.com",
+        designation="QA Engineer",
+    )
+    create_employee(
+        client,
+        department_id,
+        first_name="Amit",
+        last_name="Sharma",
+        email=f"amit-{uuid4().hex[:8]}@example.com",
+        designation="Python Developer",
+    )
+    create_employee(
+        client,
+        department_id,
+        first_name="Neha",
+        last_name="Verma",
+        email=f"neha-{uuid4().hex[:8]}@example.com",
+        designation="Data Engineer",
+    )
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"sort_by": sort_by, "sort_order": sort_order},
+    )
+
+    assert response.status_code == 200
+
+    values = [employee[sort_by] for employee in response.json()]
+    expected = sorted(values, reverse=(sort_order == "desc"))
+
+    assert values == expected
+
+
+def test_sort_employees_invalid_sort_field(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"sort_by": "password"},
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "last_name cannot be null."
 
 
-def test_update_employee_with_null_email_returns_422(client):
-    department_id = create_department(client)
-    employee = create_employee(client, department_id)
-
-    response = client.put(
-        f"/api/v1/employees/{employee['id']}",
-        json={"email": None},
+def test_sort_employees_invalid_sort_order(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"sort_order": "random"},
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "email cannot be null."
-

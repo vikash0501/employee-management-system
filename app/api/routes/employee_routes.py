@@ -50,6 +50,7 @@ def create_employee(
 
 
 
+
 @router.get("/", response_model=list[EmployeeResponse])
 def list_employees(
     skip: int = Query(default=0, ge=0),
@@ -67,6 +68,14 @@ def list_employees(
         max_length=100,
         pattern=r"^[^\x00]*$",
     ),
+    sort_by: str = Query(
+        default="id",
+        pattern=r"^(id|first_name|last_name|email|designation)$",
+    ),
+    sort_order: str = Query(
+        default="asc",
+        pattern=r"^(asc|desc)$",
+    ),
     db: Session = Depends(get_db),
 ):
     return employee_service.get_employees(
@@ -76,7 +85,10 @@ def list_employees(
         search=search,
         department_id=department_id,
         designation=designation,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
+
 
 
 
