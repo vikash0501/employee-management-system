@@ -239,6 +239,135 @@ def test_delete_nonexistent_employee_returns_404(client):
 
 
 
+
+
+def test_search_employees_by_name(client):
+    department_id = create_department(client)
+
+    employee = create_employee(
+        client,
+        department_id,
+        first_name="Vikash",
+        last_name="Kumar",
+        email="vikash.kumar@example.com",
+    )
+
+    other_employee = create_employee(
+        client,
+        department_id,
+        first_name="Rahul",
+        last_name="Sharma",
+        email="rahul.sharma@example.com",
+    )
+
+    # Search by first name
+    response = client.get(
+        "/api/v1/employees/",
+        params={"search": "vikash"},
+    )
+    assert response.status_code == 200
+    results = response.json()
+    assert any(item["id"] == employee["id"] for item in results)
+    assert all(item["id"] != other_employee["id"] for item in results)
+
+    # Search by last name
+    response = client.get(
+        "/api/v1/employees/",
+        params={"search": "Kumar"},
+    )
+    assert response.status_code == 200
+    results = response.json()
+    assert any(item["id"] == employee["id"] for item in results)
+    assert all(item["id"] != other_employee["id"] for item in results)
+
+    # Search by email
+    response = client.get(
+        "/api/v1/employees/",
+        params={"search": "vikash.kumar@example.com"},
+    )
+    assert response.status_code == 200
+    results = response.json()
+    assert any(item["id"] == employee["id"] for item in results)
+    assert all(item["id"] != other_employee["id"] for item in results)
+
+    # Search with no matching employee
+    response = client.get(
+        "/api/v1/employees/",
+        params={"search": "nonexistent-employee-xyz"},
+    )
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+
+def test_filter_employees_by_department(client):
+    first_department_id = create_department(client, "Engineering")
+    second_department_id = create_department(client, "Finance")
+
+    employee = create_employee(client, first_department_id)
+    create_employee(client, second_department_id)
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"department_id": first_department_id},
+    )
+
+    assert response.status_code == 200
+    results = response.json()
+    assert results
+    assert all(
+        item["department_id"] == first_department_id
+        for item in results
+    )
+    assert any(item["id"] == employee["id"] for item in results)
+
+
+def test_filter_employees_by_designation(client):
+    department_id = create_department(client)
+
+    employee = create_employee(
+        client,
+        department_id,
+        designation="Senior Python Developer",
+    )
+    create_employee(
+        client,
+        department_id,
+        designation="Java Developer",
+    )
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"designation": "python"},
+    )
+
+    assert response.status_code == 200
+    results = response.json()
+    assert any(item["id"] == employee["id"] for item in results)
+    assert all(
+        "python" in item["designation"].lower()
+        for item in results
+    )
+
+
+
+def test_search_with_nul_byte_returns_422(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"search": "\x00"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_designation_with_nul_byte_returns_422(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"designation": "\x00"},
+    )
+
+    assert response.status_code == 422
+
 def test_update_employee_with_null_last_name_returns_422(client):
     department_id = create_department(client)
     employee = create_employee(client, department_id)
@@ -263,3 +392,4 @@ def test_update_employee_with_null_email_returns_422(client):
 
     assert response.status_code == 422
     assert response.json()["detail"] == "email cannot be null."
+
