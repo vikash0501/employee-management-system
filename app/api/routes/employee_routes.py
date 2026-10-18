@@ -106,8 +106,14 @@ def update_employee(
             db, employee, employee_data
         )
     except ValueError as exc:
+        if str(exc) == "Department not found.":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(exc),
+            ) from exc
+
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
     except IntegrityError as exc:
