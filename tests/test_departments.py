@@ -97,6 +97,51 @@ def test_update_department_name_preserves_description(client):
     assert updated_department["description"] == original_description
 
 
+
+def test_update_department_description_only_preserves_name(client):
+    department_name = f"Dept-{uuid4().hex[:8]}"
+    original_description = "Original description"
+
+    create_response = client.post(
+        "/api/v1/departments/",
+        json={
+            "name": department_name,
+            "description": original_description,
+        },
+    )
+    assert create_response.status_code == 201
+    department_id = create_response.json()["id"]
+
+    update_response = client.put(
+        f"/api/v1/departments/{department_id}",
+        json={"description": "Updated description"},
+    )
+
+    assert update_response.status_code == 200
+    updated_department = update_response.json()
+    assert updated_department["name"] == department_name
+    assert updated_department["description"] == "Updated description"
+
+
+def test_update_department_with_null_name_returns_422(client):
+    department_name = f"Dept-{uuid4().hex[:8]}"
+
+    create_response = client.post(
+        "/api/v1/departments/",
+        json={"name": department_name},
+    )
+    assert create_response.status_code == 201
+    department_id = create_response.json()["id"]
+
+    update_response = client.put(
+        f"/api/v1/departments/{department_id}",
+        json={"name": None},
+    )
+
+    assert update_response.status_code == 422
+
+
+
 def test_delete_department_with_employees_returns_409(client):
     department_payload = {
         "name": f"Dept-{uuid4().hex[:8]}",

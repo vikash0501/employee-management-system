@@ -152,6 +152,18 @@ def test_update_employee_with_invalid_department_returns_404(client):
     assert response.json()["detail"] == "Department not found."
 
 
+def test_update_employee_with_null_first_name_returns_422(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"first_name": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "first_name cannot be null."
+
 def test_update_nonexistent_employee_returns_404(client):
     response = client.put(
         "/api/v1/employees/999999999",
@@ -224,6 +236,7 @@ def test_delete_nonexistent_employee_returns_404(client):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Employee not found."
+
 
 
 
@@ -354,3 +367,29 @@ def test_designation_with_nul_byte_returns_422(client):
     )
 
     assert response.status_code == 422
+
+def test_update_employee_with_null_last_name_returns_422(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"last_name": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "last_name cannot be null."
+
+
+def test_update_employee_with_null_email_returns_422(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"email": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "email cannot be null."
+

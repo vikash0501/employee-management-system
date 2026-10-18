@@ -60,6 +60,7 @@ def get_department(
     return department
 
 
+
 @router.put("/{department_id}", response_model=DepartmentResponse)
 def update_department(
     department_id: int,
@@ -74,18 +75,21 @@ def update_department(
             detail="Department not found.",
         )
 
-    existing_department = department_service.get_department_by_name(
-        db, department_data.name
-    )
-
-    if existing_department and existing_department.id != department_id:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A department with this name already exists.",
+    # Check duplicate name only when a new name is provided.
+    if department_data.name is not None:
+        existing_department = department_service.get_department_by_name(
+            db, department_data.name
         )
 
-    return department_service.update_department(db, department, department_data)
+        if existing_department and existing_department.id != department_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A department with this name already exists.",
+            )
 
+    return department_service.update_department(
+        db, department, department_data
+    )
 
 
 @router.delete(
