@@ -29,17 +29,21 @@ def create_department(db: Session, department_data: DepartmentCreate) -> Departm
     return department
 
 
+
 def update_department(
     db: Session,
     department: Department,
     department_data: DepartmentUpdate,
 ) -> Department:
-    for field, value in department_data.model_dump().items():
+    update_data = department_data.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
         setattr(department, field, value)
 
     db.commit()
     db.refresh(department)
     return department
+
 
 def department_has_employees(db: Session, department_id: int) -> bool:
     statement = select(Employee.id).where(

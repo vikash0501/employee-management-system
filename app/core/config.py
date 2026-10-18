@@ -1,4 +1,5 @@
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
 
-    API_ACCESS_TOKEN: str
+    API_ACCESS_TOKEN: str = Field(min_length=32)
 
     model_config = SettingsConfigDict(
         env_file=".env",

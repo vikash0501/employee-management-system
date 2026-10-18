@@ -69,6 +69,34 @@ def test_get_nonexistent_department_returns_404(client):
 
     assert response.status_code == 404
 
+
+def test_update_department_name_preserves_description(client):
+    original_description = "Keep this department description"
+    department_name = f"Dept-{uuid4().hex[:8]}"
+
+    create_response = client.post(
+        "/api/v1/departments/",
+        json={
+            "name": department_name,
+            "description": original_description,
+        },
+    )
+    assert create_response.status_code == 201
+
+    department_id = create_response.json()["id"]
+    updated_name = f"Updated-{uuid4().hex[:8]}"
+
+    update_response = client.put(
+        f"/api/v1/departments/{department_id}",
+        json={"name": updated_name},
+    )
+
+    assert update_response.status_code == 200
+    updated_department = update_response.json()
+    assert updated_department["name"] == updated_name
+    assert updated_department["description"] == original_description
+
+
 def test_delete_department_with_employees_returns_409(client):
     department_payload = {
         "name": f"Dept-{uuid4().hex[:8]}",

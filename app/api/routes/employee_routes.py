@@ -54,7 +54,9 @@ def list_employees(
     limit: int = Query(default=100, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    return employee_service.get_employees(db, skip=skip, limit=limit)
+    return employee_service.get_employees(
+        db, skip=skip, limit=limit
+    )
 
 
 @router.get("/{employee_id}", response_model=EmployeeResponse)
@@ -87,18 +89,22 @@ def update_employee(
             detail="Employee not found.",
         )
 
-    existing_employee = employee_service.get_employee_by_email(
-        db, str(employee_data.email)
-    )
-
-    if existing_employee and existing_employee.id != employee_id:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="An employee with this email already exists.",
+    # Check duplicate email only when email is provided.
+    if employee_data.email is not None:
+        existing_employee = employee_service.get_employee_by_email(
+            db, str(employee_data.email)
         )
 
+        if existing_employee and existing_employee.id != employee_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An employee with this email already exists.",
+            )
+
     try:
-        return employee_service.update_employee(db, employee, employee_data)
+        return employee_service.update_employee(
+            db, employee, employee_data
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -112,7 +118,10 @@ def update_employee(
         ) from exc
 
 
-@router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{employee_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 def delete_employee(
     employee_id: int,
     db: Session = Depends(get_db),

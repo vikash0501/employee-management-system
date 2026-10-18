@@ -21,8 +21,18 @@ class DepartmentCreate(DepartmentBase):
     pass
 
 
-class DepartmentUpdate(DepartmentBase):
-    pass
+class DepartmentUpdate(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+        examples=["Engineering"],
+    )
+    description: str | None = Field(
+        default=None,
+        max_length=500,
+        examples=["Software engineering department"],
+    )
 
 
 class DepartmentResponse(DepartmentBase):

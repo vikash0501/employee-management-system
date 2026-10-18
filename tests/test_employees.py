@@ -30,14 +30,20 @@ def create_employee(client, department_id, **overrides):
     return response.json()
 
 
+
+
+
 def test_create_employee(client):
     department_id = create_department(client)
     employee = create_employee(client, department_id)
 
     assert employee["first_name"] == "Test"
     assert employee["last_name"] == "Employee"
+    assert employee["email"].startswith("employee-")
+    assert employee["email"].endswith("@example.com")
     assert employee["department_id"] == department_id
     assert "id" in employee
+
 
 
 def test_list_employees(client):
@@ -91,6 +97,21 @@ def test_update_employee_partial_data_preserves_other_fields(client):
     assert updated["first_name"] == employee["first_name"]
     assert updated["email"] == employee["email"]
     assert updated["department_id"] == department_id
+
+
+def test_update_employee_with_same_email_returns_200(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"email": employee["email"]},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == employee["id"]
+    assert response.json()["email"] == employee["email"]
+
 
 
 def test_update_employee_with_duplicate_email_returns_409(client):
