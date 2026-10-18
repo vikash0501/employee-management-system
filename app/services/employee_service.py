@@ -63,9 +63,9 @@ def get_employees(
         raise ValueError("Unsupported sort field.")
 
     if sort_order == "desc":
-        statement = statement.order_by(sort_column.desc())
+        statement = statement.order_by(sort_column.desc(), Employee.id.asc())
     else:
-        statement = statement.order_by(sort_column.asc())
+        statement = statement.order_by(sort_column.asc(), Employee.id.asc())
 
     statement = statement.offset(skip).limit(limit)
 
