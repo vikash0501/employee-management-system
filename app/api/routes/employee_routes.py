@@ -49,13 +49,24 @@ def create_employee(
 
 
 
+
 @router.get("/", response_model=list[EmployeeResponse])
 def list_employees(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=100),
-    search: str | None = Query(default=None, min_length=1, max_length=100),
+    search: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100,
+        pattern=r"^[^\x00]*$",
+    ),
     department_id: int | None = Query(default=None, ge=1),
-    designation: str | None = Query(default=None, min_length=1, max_length=100),
+    designation: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100,
+        pattern=r"^[^\x00]*$",
+    ),
     db: Session = Depends(get_db),
 ):
     return employee_service.get_employees(
@@ -66,6 +77,7 @@ def list_employees(
         department_id=department_id,
         designation=designation,
     )
+
 
 
 

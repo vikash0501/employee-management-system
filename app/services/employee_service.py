@@ -26,12 +26,13 @@ def get_employees(
 ) -> list[Employee]:
     statement = select(Employee)
 
+    
     if search and search.strip():
-        search_term = f"%{search.strip()}%"
+        search_term = search.strip()
         statement = statement.where(
-            Employee.first_name.ilike(search_term)
-            | Employee.last_name.ilike(search_term)
-            | Employee.email.ilike(search_term)
+            Employee.first_name.icontains(search_term, autoescape=True)
+            | Employee.last_name.icontains(search_term, autoescape=True)
+            | Employee.email.icontains(search_term, autoescape=True)
         )
 
     if department_id is not None:
@@ -40,8 +41,11 @@ def get_employees(
         )
 
     if designation and designation.strip():
+        designation_term = designation.strip()
         statement = statement.where(
-            Employee.designation.ilike(f"%{designation.strip()}%")
+            Employee.designation.icontains(
+                designation_term, autoescape=True
+            )
         )
 
     statement = (

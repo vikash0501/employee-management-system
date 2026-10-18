@@ -294,3 +294,22 @@ def test_filter_employees_by_designation(client):
         "python" in item["designation"].lower()
         for item in results
     )
+
+
+
+def test_search_with_nul_byte_returns_422(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"search": "\x00"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_designation_with_nul_byte_returns_422(client):
+    response = client.get(
+        "/api/v1/employees/",
+        params={"designation": "\x00"},
+    )
+
+    assert response.status_code == 422
