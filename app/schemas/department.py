@@ -1,7 +1,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class DepartmentBase(BaseModel):
@@ -33,6 +33,12 @@ class DepartmentUpdate(BaseModel):
         max_length=500,
         examples=["Software engineering department"],
     )
+
+    @model_validator(mode="after")
+    def validate_name(self):
+        if "name" in self.model_fields_set and self.name is None:
+            raise ValueError("Department name cannot be null.")
+        return self
 
 
 class DepartmentResponse(DepartmentBase):

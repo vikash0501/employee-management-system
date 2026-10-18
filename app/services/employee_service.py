@@ -85,12 +85,28 @@ def create_employee(db: Session, employee_data: EmployeeCreate) -> Employee:
     return employee
 
 
+
 def update_employee(
     db: Session,
     employee: Employee,
     employee_data: EmployeeUpdate,
 ) -> Employee:
     update_data = employee_data.model_dump(exclude_unset=True)
+
+    # These fields cannot be null in the database.
+    non_nullable_fields = {
+        "first_name",
+        "last_name",
+        "email",
+        "designation",
+        "department_id",
+        "date_of_joining",
+        "employment_status",
+    }
+
+    for field, value in update_data.items():
+        if value is None and field in non_nullable_fields:
+            raise ValueError(f"{field} cannot be null.")
 
     if "department_id" in update_data:
         department = db.get(Department, update_data["department_id"])
@@ -104,6 +120,7 @@ def update_employee(
     db.commit()
     db.refresh(employee)
     return employee
+
 
 
 def delete_employee(db: Session, employee: Employee) -> None:
