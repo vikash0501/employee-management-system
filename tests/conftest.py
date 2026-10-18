@@ -39,7 +39,6 @@ def create_test_tables():
 
 
 @pytest.fixture
-@pytest.fixture
 def client():
     verify_test_database()
 
