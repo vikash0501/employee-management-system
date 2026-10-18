@@ -20,8 +20,36 @@ def get_employees(
     db: Session,
     skip: int = 0,
     limit: int = 100,
+    search: str | None = None,
+    department_id: int | None = None,
+    designation: str | None = None,
 ) -> list[Employee]:
-    statement = select(Employee).order_by(Employee.id).offset(skip).limit(limit)
+    statement = select(Employee)
+
+    if search and search.strip():
+        search_term = f"%{search.strip()}%"
+        statement = statement.where(
+            Employee.first_name.ilike(search_term)
+            | Employee.last_name.ilike(search_term)
+            | Employee.email.ilike(search_term)
+        )
+
+    if department_id is not None:
+        statement = statement.where(
+            Employee.department_id == department_id
+        )
+
+    if designation and designation.strip():
+        statement = statement.where(
+            Employee.designation.ilike(f"%{designation.strip()}%")
+        )
+
+    statement = (
+        statement.order_by(Employee.id)
+        .offset(skip)
+        .limit(limit)
+    )
+
     return list(db.scalars(statement).all())
 
 

@@ -224,3 +224,73 @@ def test_delete_nonexistent_employee_returns_404(client):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Employee not found."
+
+
+
+def test_search_employees_by_name(client):
+    department_id = create_department(client)
+    employee = create_employee(
+        client,
+        department_id,
+        first_name="Vikash",
+        last_name="Kumar",
+    )
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"search": "vikash"},
+    )
+
+    assert response.status_code == 200
+    results = response.json()
+    assert any(item["id"] == employee["id"] for item in results)
+
+
+def test_filter_employees_by_department(client):
+    first_department_id = create_department(client, "Engineering")
+    second_department_id = create_department(client, "Finance")
+
+    employee = create_employee(client, first_department_id)
+    create_employee(client, second_department_id)
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"department_id": first_department_id},
+    )
+
+    assert response.status_code == 200
+    results = response.json()
+    assert results
+    assert all(
+        item["department_id"] == first_department_id
+        for item in results
+    )
+    assert any(item["id"] == employee["id"] for item in results)
+
+
+def test_filter_employees_by_designation(client):
+    department_id = create_department(client)
+
+    employee = create_employee(
+        client,
+        department_id,
+        designation="Senior Python Developer",
+    )
+    create_employee(
+        client,
+        department_id,
+        designation="Java Developer",
+    )
+
+    response = client.get(
+        "/api/v1/employees/",
+        params={"designation": "python"},
+    )
+
+    assert response.status_code == 200
+    results = response.json()
+    assert any(item["id"] == employee["id"] for item in results)
+    assert all(
+        "python" in item["designation"].lower()
+        for item in results
+    )
