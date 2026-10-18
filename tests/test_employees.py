@@ -236,3 +236,30 @@ def test_delete_nonexistent_employee_returns_404(client):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Employee not found."
+
+
+
+def test_update_employee_with_null_last_name_returns_422(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"last_name": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "last_name cannot be null."
+
+
+def test_update_employee_with_null_email_returns_422(client):
+    department_id = create_department(client)
+    employee = create_employee(client, department_id)
+
+    response = client.put(
+        f"/api/v1/employees/{employee['id']}",
+        json={"email": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "email cannot be null."
