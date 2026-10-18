@@ -35,12 +35,21 @@ def create_employee(client, department_id, **overrides):
 
 def test_create_employee(client):
     department_id = create_department(client)
-    employee = create_employee(client, department_id)
+    email = f"employee-{uuid4().hex[:8]}@example.com"
+
+    employee = create_employee(
+        client,
+        department_id,
+        email=email,
+        designation="Python Developer",
+        date_of_joining="2025-01-15",
+    )
 
     assert employee["first_name"] == "Test"
     assert employee["last_name"] == "Employee"
-    assert employee["email"].startswith("employee-")
-    assert employee["email"].endswith("@example.com")
+    assert employee["email"] == email
+    assert employee["designation"] == "Python Developer"
+    assert employee["date_of_joining"].startswith("2025-01-15")
     assert employee["department_id"] == department_id
     assert "id" in employee
 
